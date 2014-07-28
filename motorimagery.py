@@ -4,6 +4,7 @@
 
 from psychopy import visual, core, event
 import random
+import sys
 import csv_collector
 
 class MotorImagery(object):
@@ -13,9 +14,9 @@ class MotorImagery(object):
     #which equals 2/60 == 30Hz
     #Flash frequency = refreshrate/(frame_on+frame_off)
     
-    def __init__(self, mywin= visual.Window([800, 600], fullscr=False, monitor='testMonitor',units='deg'),
+    def __init__(self, mywin= visual.Window([800, 600], fullscr=True, monitor='testMonitor',units='deg'),
                  trialdur = 10.0, port=None,
-                 fname='motor_imagery.csv', num_repeats=4, waitdur=5):
+                 fname='motor_imagery.csv', num_repeats=5, waitdur=5):
         
         self.mywin = mywin
         self.trialdur = trialdur
@@ -26,6 +27,7 @@ class MotorImagery(object):
         self.labels = ['Right hand', 'Left hand', 'Feet', 'Tongue']
         self.patterns = [ visual.TextStim(win=self.mywin, text=lbl) for lbl in self.labels ]
 
+        self.mywin.setMouseVisible(False)
                 
 
     def collecting(self):
@@ -43,12 +45,15 @@ class MotorImagery(object):
             self.pattern_order.extend(x)
         
     def start(self):
+        self.mywin.flip()
         
+        #start saving data from EEG device.
+        self.collecting()
+        self.epoch(0)
         
-        
-        ###Testing framerate grabber###
-        print self.mywin.getActualFrameRate()
-        self.Trialclock = core.Clock()
+        # ###Testing framerate grabber###
+        # print self.mywin.getActualFrameRate()
+        # self.Trialclock = core.Clock()
 
         #possibly convert trialdur into frames given refresh rate (normally set at 60Hz)
         # self.framerate = self.mywin.getActualFrameRate()
@@ -57,16 +62,13 @@ class MotorImagery(object):
         self.generate_pattern_order()
         self.count = 0
         self.trial_num = 0
-        
-        #start saving data from EEG device.
-        self.collecting()
+
+        self.mywin.flip()
+        core.wait(self.waitdur)
 
         while self.trial_num < len(self.labels) * self.num_repeats:
-
-            
             #reset tagging
             self.should_tag = False
-            self.epoch(0)
 
             # self.Trialclock.reset()    
 
@@ -74,7 +76,7 @@ class MotorImagery(object):
             
             self.patterns[p].draw()
             self.mywin.flip()
-            self.epoch(p)
+            self.epoch(p+1)
             core.wait(self.trialdur)
                 
             #clean black screen off
@@ -88,9 +90,8 @@ class MotorImagery(object):
      
         self.collector.stop()
         self.collector.disconnect()
-            
-
-  
+        self.mywin.close()
+                
 """
 Here are some test cases 
 Just run this program by itself if you don't want to use run.py
@@ -100,7 +101,9 @@ Just run this program by itself if you don't want to use run.py
 if __name__ == '__main__':
     motorimagery = MotorImagery()
     motorimagery.start()
-
+    print('trying exit')
+    core.quit()
+    sys.exit()
 
 
    
